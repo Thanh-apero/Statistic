@@ -99,19 +99,12 @@ class ExpenseManager {
             
             card.innerHTML = `
                 <div class="person-card-content">
-                    <div class="person-left">
-                        <div class="person-avatar">${initials}</div>
-                        <div class="person-info">
-                            <div class="person-name">${person.name}</div>
-                            <div class="person-transactions">${person.count} giao dịch</div>
-                        </div>
-                    </div>
-                    <div class="person-right">
-                        <div class="person-total">${this.formatCurrency(person.total)}</div>
-                        <div class="person-arrow">
-                            <i class="fas fa-chevron-right"></i>
-                        </div>
-                    </div>
+                    <span class="person-name">${person.name}</span>
+                    <span class="person-transactions">${person.count} giao dịch</span>
+                    <span class="person-total">${this.formatCurrency(person.total)}</span>
+                    <span class="person-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </span>
                 </div>
             `;
             
