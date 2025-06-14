@@ -90,18 +90,26 @@ class ExpenseManager {
             return;
         }
 
+        // Tính trung bình cho việc cân bằng
+        const totalAmount = peopleStats.reduce((sum, person) => sum + person.total, 0);
+        const averagePerPerson = totalAmount / peopleStats.length;
+
         peopleStats.forEach(person => {
             const card = document.createElement('div');
             card.className = 'person-card';
             card.onclick = () => this.showPersonDetail(person.name);
             
-            const initials = person.name.split(' ').map(n => n[0]).join('').toUpperCase();
+            // Tính số tiền cần nộp/nhận (trung bình - đã chi)
+            const balance = person.total - averagePerPerson;
             
             card.innerHTML = `
                 <div class="person-card-content">
                     <span class="person-name">${person.name}</span>
                     <span class="person-transactions">${person.count} giao dịch</span>
                     <span class="person-total">${this.formatCurrency(person.total)}</span>
+                    <span class="person-balance ${balance >= 0 ? 'positive' : 'negative'}">
+                        ${balance >= 0 ? '+' : ''}${this.formatCurrency(Math.abs(balance))}
+                    </span>
                     <span class="person-arrow">
                         <i class="fas fa-chevron-right"></i>
                     </span>
