@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thống Kê Chi Tiêu - Phòng Trọ</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-chart-line"></i> Thống Kê Chi Tiêu Phòng Trọ</h1>
+
+        <div class="admin-controls">
+            <div class="lock-status" id="lockStatus">
+                <i class="fas fa-lock-open" id="lockIcon"></i>
+                <span id="lockText">Mở khóa</span>
+            </div>
+            <button class="btn btn-admin" onclick="toggleLock()">
+                <i class="fas fa-key"></i> Khóa/Mở
+            </button>
+            <button class="btn btn-archive" onclick="showArchiveModal()">
+                <i class="fas fa-archive"></i> Bắt đầu thống kê mới
+            </button>
+            <button class="btn btn-secondary" onclick="showArchiveList()">
+                <i class="fas fa-history"></i> Xem kho lưu trữ
+            </button>
+        </div>
+
+        <div class="stats-cards">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-wallet"></i></div>
+                <div class="stat-info">
+                    <div class="stat-value" id="totalAmount">0 VNĐ</div>
+                    <div class="stat-label">Tổng chi tiêu</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-receipt"></i></div>
+                <div class="stat-info">
+                    <div class="stat-value" id="totalCount">0</div>
+                    <div class="stat-label">Số giao dịch</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-calculator"></i></div>
+                <div class="stat-info">
+                    <div class="stat-value" id="averageAmount">0 VNĐ</div>
+                    <div class="stat-label">Trung bình</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="form-section" id="formSection">
+            <h2><i class="fas fa-plus-circle"></i> Thêm Chi Tiêu Mới</h2>
+            <form id="expenseForm" class="expense-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name">Tên thành viên</label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="amount">Số tiền (VNĐ)</label>
+                        <input type="number" id="amount" name="amount" step="1000" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="purpose">Mục đích chi tiêu</label>
+                    <input type="text" id="purpose" name="purpose" required>
+                </div>
+                <button type="submit" id="submitBtn" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Thêm chi tiêu
+                </button>
+            </form>
+        </div>
+
+        <div class="people-stats-section">
+            <div class="section-header">
+                <h2><i class="fas fa-users"></i> Thống Kê Theo Người</h2>
+                <button class="btn btn-secondary" onclick="refreshPeopleStats()">
+                    <i class="fas fa-sync-alt"></i> Làm mới
+                </button>
+            </div>
+
+            <div class="people-stats-grid" id="peopleStatsGrid">
+                <div class="loading">Đang tải thống kê...</div>
+            </div>
+        </div>
+
+        <div class="table-section">
+            <div class="section-header">
+                <h2><i class="fas fa-list"></i> Danh Sách Chi Tiêu</h2>
+                <button class="btn btn-secondary" onclick="toggleHistory()">
+                    <i class="fas fa-history"></i> Lịch sử chỉnh sửa
+                </button>
+            </div>
+
+            <div class="table-container">
+                <table id="expenseTable" class="expense-table">
+                    <thead>
+                    <tr>
+                        <th>Tên</th>
+                        <th>Số tiền</th>
+                        <th>Mục đích</th>
+                        <th>Ngày tạo</th>
+                        <th>Thao tác</th>
+                    </tr>
+                    </thead>
+                    <tbody id="expenseTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Modals -->
+        <div id="historyModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-history"></i> Lịch Sử Chỉnh Sửa</h3>
+                    <span class="close" onclick="toggleHistory()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div id="historyList"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="personModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-user"></i> Chi Tiết Chi Tiêu - <span id="personName"></span></h3>
+                    <span class="close" onclick="closePersonModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="person-summary" id="personSummary"></div>
+                    <div class="person-expenses" id="personExpenses"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="passwordModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-key"></i> Nhập Mật Khẩu</h3>
+                    <span class="close" onclick="closePasswordModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="password-form">
+                        <div class="form-group">
+                            <label for="adminPassword">Mật khẩu quản trị:</label>
+                            <input type="password" id="adminPassword" class="form-input">
+                        </div>
+                        <div class="modal-actions">
+                            <button class="btn btn-primary" onclick="submitPassword()">
+                                <i class="fas fa-check"></i> Xác nhận
+                            </button>
+                            <button class="btn btn-secondary" onclick="closePasswordModal()">
+                                <i class="fas fa-times"></i> Hủy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="archiveModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-archive"></i> Bắt Đầu Thống Kê Mới</h3>
+                    <span class="close" onclick="closeArchiveModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="archive-warning">
+                        <p><i class="fas fa-exclamation-triangle"></i> <strong>Cảnh báo:</strong></p>
+                        <p>Thao tác này sẽ chuyển tất cả dữ liệu hiện tại vào kho lưu trữ và bắt đầu thống kê mới từ
+                            đầu.</p>
+                        <p>Bạn có chắc chắn muốn tiếp tục?</p>
+                    </div>
+                    <div class="password-form">
+                        <div class="form-group">
+                            <label for="archivePassword">Mật khẩu quản trị:</label>
+                            <input type="password" id="archivePassword" class="form-input">
+                        </div>
+                        <div class="modal-actions">
+                            <button class="btn btn-danger" onclick="confirmArchive()">
+                                <i class="fas fa-archive"></i> Xác nhận
+                            </button>
+                            <button class="btn btn-secondary" onclick="closeArchiveModal()">
+                                <i class="fas fa-times"></i> Hủy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="archiveListModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-archive"></i> Kho Lưu Trữ</h3>
+                    <span class="close" onclick="closeArchiveListModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div id="archiveList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

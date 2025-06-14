@@ -1,0 +1,104 @@
+[
+  {
+    "timestamp": "2025-06-14T19:10:55.420037",
+    "action": "ADD",
+    "data": {
+      "id": 1,
+      "name": "Thành",
+      "amount": 293000.0,
+      "purpose": "Đi chợ thứ 7",
+      "date": "2025-06-14 19:10:55"
+    }
+  },
+  {
+    "timestamp": "2025-06-14T19:11:38.960222",
+    "action": "ADD",
+    "data": {
+      "id": 2,
+      "name": "Thành",
+      "amount": 172000.0,
+      "purpose": "Mua chảo",
+      "date": "2025-06-14 19:11:38"
+    }
+  },
+  {
+    "timestamp": "2025-06-14T19:12:31.464975",
+    "action": "ADD",
+    "data": {
+      "id": 3,
+      "name": "Thành",
+      "amount": 100000.0,
+      "purpose": "Mua mì tôm + lifeboy",
+      "date": "2025-06-14 19:12:31"
+    }
+  },
+  {
+    "timestamp": "2025-06-14T19:12:58.846101",
+    "action": "ADD",
+    "data": {
+      "id": 4,
+      "name": "Vang",
+      "amount": 15000.0,
+      "purpose": "Túi rác",
+      "date": "2025-06-14 19:12:58"
+    }
+  },
+  {
+    "timestamp": "2025-06-14T19:47:44.124553",
+    "action": "ARCHIVE",
+    "data": {
+      "count": 5
+    }
+  },
+  {
+    "timestamp": "2025-06-14T20:03:15.401208",
+    "action": "ADD",
+    "data": {
+      "id": 1,
+      "name": "Thành",
+      "amount": 293000.0,
+      "purpose": "Đi chợ thứ 7",
+      "date": "2025-06-14 20:03:15"
+    }
+  },
+  {
+    "timestamp": "2025-06-14T20:05:41.487278",
+    "action": "ADD",
+    "data": {
+      "id": 2,
+      "name": "vang",
+      "amount": 15000.0,
+      "purpose": "mua túi rác",
+      "date": "2025-06-14 20:05:41"
+    }
+  },
+  {
+    "timestamp": "2025-06-14T20:06:04.002264",
+    "action": "ADD",
+    "data": {
+      "id": 3,
+      "name": "Thành",
+      "amount": 100000.0,
+      "purpose": "mua mì tôm",
+      "date": "2025-06-14 20:06:04"
+    }
+  },
+  {
+    "timestamp": "2025-06-14T20:07:20.366403",
+    "action": "ARCHIVE",
+    "data": {
+      "count": 3
+    }
+  },
+  {
+    "timestamp": "2025-06-14T20:08:15.935591",
+    "action": "ADD",
+    "data": {
+      "id": 1,
+      "name": "Thành",
+      "amount": 100000.0,
+      "purpose": "Đi chợ thứ 7",
+      "date": "2025-06-14 20:08:15"
+    }
+  }
+]
