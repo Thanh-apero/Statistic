@@ -4,6 +4,7 @@ class ExpenseManager {
         this.editingId = null;
         this.isLocked = false;
         this.currentAction = null;
+        this.memberSuggestions = new Set(); // Lưu danh sách tên thành viên
         this.init();
     }
 
@@ -17,6 +18,37 @@ class ExpenseManager {
         document.getElementById('expenseForm').addEventListener('submit', (e) => {
             e.preventDefault();
             this.handleFormSubmit();
+        });
+
+        // Thêm event listener cho input số tiền để hiển thị preview
+        const amountInput = document.getElementById('amount');
+        amountInput.addEventListener('input', (e) => {
+            this.updateAmountPreview(e.target.value);
+        });
+
+        // Thêm event listener cho input tên để kích hoạt autocomplete
+        const nameInput = document.getElementById('name');
+        nameInput.addEventListener('input', (e) => {
+            this.showSuggestions(e.target.value);
+        });
+
+        // Xử lý phím mũi tên cho navigation
+        nameInput.addEventListener('keydown', (e) => {
+            this.handleKeyNavigation(e);
+        });
+
+        // Ẩn suggestions khi click ra ngoài
+        nameInput.addEventListener('blur', (e) => {
+            // Delay để cho phép click vào suggestions
+            setTimeout(() => {
+                this.hideSuggestions();
+            }, 200);
+        });
+
+        // Hiển thị suggestions khi focus vào input
+        nameInput.addEventListener('focus', (e) => {
+            // Hiển thị tất cả gợi ý khi focus, hoặc filter theo giá trị hiện tại
+            this.showSuggestions(e.target.value || '');
         });
 
         window.onclick = (event) => {
@@ -48,7 +80,12 @@ class ExpenseManager {
         try {
             const response = await fetch('/api/expenses');
             this.expenses = await response.json();
+            // Cập nhật danh sách gợi ý tên thành viên
+            this.expenses.forEach(expense => {
+                this.memberSuggestions.add(expense.name);
+            });
             this.renderExpenses();
+            this.setupAutocomplete();
         } catch (error) {
             console.error('Error loading expenses:', error);
         }
@@ -158,10 +195,19 @@ class ExpenseManager {
         }
         
         const formData = new FormData(document.getElementById('expenseForm'));
+        
+        // Chuẩn hóa tên: trim space và capitalize từng từ
+        let rawName = formData.get('name').trim();
+        const normalizedName = this.normalizeName(rawName);
+        
+        // Chuyển đổi số tiền: nhập 1 = 1000 VNĐ
+        let rawAmount = parseFloat(formData.get('amount'));
+        const actualAmount = rawAmount * 1000;
+        
         const data = {
-            name: formData.get('name'),
-            amount: parseFloat(formData.get('amount')),
-            purpose: formData.get('purpose')
+            name: normalizedName,
+            amount: actualAmount,
+            purpose: formData.get('purpose').trim()
         };
 
         if (!data.name || !data.amount || !data.purpose) {
@@ -182,6 +228,9 @@ class ExpenseManager {
             });
 
             if (response.ok) {
+                // Thêm tên mới vào danh sách gợi ý
+                this.memberSuggestions.add(normalizedName);
+                
                 this.resetForm();
                 this.loadExpenses();
                 this.loadStats();
@@ -206,7 +255,8 @@ class ExpenseManager {
         const expense = this.expenses.find(e => e.id === id);
         if (expense) {
             document.getElementById('name').value = expense.name;
-            document.getElementById('amount').value = expense.amount;
+            // Hiển thị số tiền đã chia cho 1000 (số đơn giản)
+            document.getElementById('amount').value = expense.amount / 1000;
             document.getElementById('purpose').value = expense.purpose;
             
             this.editingId = id;
@@ -248,6 +298,7 @@ class ExpenseManager {
         document.getElementById('expenseForm').reset();
         this.editingId = null;
         document.getElementById('submitBtn').innerHTML = '<i class="fas fa-plus"></i> Thêm chi tiêu';
+        this.hideSuggestions();
     }
 
     formatCurrency(amount) {
@@ -255,6 +306,23 @@ class ExpenseManager {
             style: 'currency',
             currency: 'VND'
         }).format(amount);
+    }
+
+    // Thêm method để cập nhật preview số tiền
+    updateAmountPreview(value) {
+        const amountInput = document.getElementById('amount');
+        const formHint = amountInput.parentElement.querySelector('.form-hint');
+        
+        if (value && !isNaN(value) && parseFloat(value) > 0) {
+            const actualAmount = parseFloat(value) * 1000;
+            formHint.textContent = `= ${this.formatCurrency(actualAmount)}`;
+            formHint.style.color = '#48bb78';
+            formHint.style.fontWeight = '600';
+        } else {
+            formHint.textContent = 'Nhập số đơn giản: 1 = 1,000 VNĐ';
+            formHint.style.color = '#718096';
+            formHint.style.fontWeight = 'normal';
+        }
     }
 
     formatDate(dateString) {
@@ -266,6 +334,123 @@ class ExpenseManager {
             hour: '2-digit',
             minute: '2-digit'
         });
+    }
+
+    // Thêm method để chuẩn hóa tên
+    normalizeName(name) {
+        if (!name) return '';
+        
+        return name
+            .trim()
+            .toLowerCase()
+            .split(' ')
+            .filter(word => word.length > 0) // Loại bỏ khoảng trắng thừa
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+    }
+
+    setupAutocomplete() {
+        const nameInput = document.getElementById('name');
+        this.suggestionBox = document.createElement('div');
+        this.suggestionBox.className = 'suggestion-box';
+        this.selectedIndex = -1; // Index của suggestion được chọn
+        nameInput.parentNode.appendChild(this.suggestionBox);
+    }
+
+    handleKeyNavigation(e) {
+        if (!this.suggestionBox || this.suggestionBox.style.display === 'none') {
+            return;
+        }
+
+        const suggestions = this.suggestionBox.querySelectorAll('.suggestion-item');
+        
+        switch(e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                this.selectedIndex = Math.min(this.selectedIndex + 1, suggestions.length - 1);
+                this.highlightSuggestion(suggestions);
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                this.selectedIndex = Math.max(this.selectedIndex - 1, -1);
+                this.highlightSuggestion(suggestions);
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (this.selectedIndex >= 0 && suggestions[this.selectedIndex]) {
+                    suggestions[this.selectedIndex].click();
+                }
+                break;
+            case 'Escape':
+                this.hideSuggestions();
+                break;
+        }
+    }
+
+    highlightSuggestion(suggestions) {
+        suggestions.forEach((item, index) => {
+            if (index === this.selectedIndex) {
+                item.classList.add('selected');
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+    }
+
+    showSuggestions(input) {
+        let filtered;
+        
+        if (!input || input.trim() === '') {
+            // Hiển thị tất cả gợi ý khi không có input
+            filtered = Array.from(this.memberSuggestions);
+        } else {
+            // Filter theo input
+            filtered = Array.from(this.memberSuggestions).filter(name => 
+                name.toLowerCase().includes(input.toLowerCase())
+            );
+        }
+
+        if (filtered.length === 0) {
+            this.hideSuggestions();
+            return;
+        }
+
+        // Sắp xếp theo độ phổ biến (số lần xuất hiện)
+        const sortedFiltered = filtered.sort((a, b) => {
+            const countA = this.expenses.filter(exp => exp.name === a).length;
+            const countB = this.expenses.filter(exp => exp.name === b).length;
+            return countB - countA;
+        });
+
+        this.suggestionBox.innerHTML = sortedFiltered.map(name => {
+            const count = this.expenses.filter(exp => exp.name === name).length;
+            const total = this.expenses.filter(exp => exp.name === name)
+                .reduce((sum, exp) => sum + exp.amount, 0);
+            return `<div class="suggestion-item" onclick="expenseManager.selectSuggestion('${name}')">
+                <div class="suggestion-info">
+                    <div class="suggestion-name">${name}</div>
+                    <div class="suggestion-details">
+                        <span class="suggestion-count">${count} giao dịch</span>
+                        <span class="suggestion-total">${this.formatCurrency(total)}</span>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+        
+        this.selectedIndex = -1; // Reset selection
+        this.suggestionBox.style.display = 'block';
+    }
+
+    hideSuggestions() {
+        if (this.suggestionBox) {
+            this.suggestionBox.style.display = 'none';
+            this.selectedIndex = -1; // Reset selection
+        }
+    }
+
+    selectSuggestion(name) {
+        document.getElementById('name').value = name;
+        this.hideSuggestions();
     }
 
     showNotification(message, type) {
