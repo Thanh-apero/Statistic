@@ -774,19 +774,35 @@ class ExpenseManager {
             let actionText = '';
             let dataText = '';
             
+            // Parse JSON data
+            let parsedData;
+            try {
+                parsedData = JSON.parse(item.data);
+            } catch (e) {
+                console.error('Error parsing history data:', e);
+                parsedData = item.data;
+            }
+            
             switch (item.action) {
                 case 'ADD':
                     actionText = '➕ Thêm chi tiêu mới';
-                    dataText = `${item.data.name} - ${this.formatCurrency(item.data.amount)} - ${item.data.purpose}`;
+                    dataText = `${parsedData.name} - ${this.formatCurrency(parsedData.amount)} - ${parsedData.purpose}`;
                     break;
                 case 'UPDATE':
                     actionText = '✏️ Cập nhật chi tiêu';
-                    dataText = `${item.data.new.name} - ${this.formatCurrency(item.data.new.amount)} - ${item.data.new.purpose}`;
+                    dataText = `${parsedData.new.name} - ${this.formatCurrency(parsedData.new.amount)} - ${parsedData.new.purpose}`;
                     break;
                 case 'DELETE':
                     actionText = '🗑️ Xóa chi tiêu';
-                    dataText = `${item.data.name} - ${this.formatCurrency(item.data.amount)} - ${item.data.purpose}`;
+                    dataText = `${parsedData.name} - ${this.formatCurrency(parsedData.amount)} - ${parsedData.purpose}`;
                     break;
+                case 'ARCHIVE':
+                    actionText = '📦 Lưu trữ dữ liệu';
+                    dataText = `Đã lưu trữ ${parsedData.count} mục chi tiêu`;
+                    break;
+                default:
+                    actionText = `📝 ${item.action}`;
+                    dataText = JSON.stringify(parsedData);
             }
 
             historyItem.innerHTML = `
